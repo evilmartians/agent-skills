@@ -1,0 +1,30 @@
+{
+  "name": "evilmartians",
+  "owner": {
+    "name": "Evil Martians",
+    "url": "https://evilmartians.com"
+  },
+  "metadata": {
+    "description": "Production-grade Agent Skills from Evil Martians",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "llms-visibility",
+      "source": "./",
+      "strict": false,
+      "description": "Make a site visible and readable to LLMs and AI agents. Covers Markdown routes, Accept content negotiation, llms.txt, and crawler signals in robots.txt. Pushes back on popular patterns that don't work.",
+      "category": "ai",
+      "keywords": [
+        "llms-txt",
+        "markdown",
+        "content-negotiation",
+        "geo",
+        "ai-crawlers"
+      ],
+      "skills": [
+        "./skills/llms-visibility"
+      ]
+    }
+  ]
+}
