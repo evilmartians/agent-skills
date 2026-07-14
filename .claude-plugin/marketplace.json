@@ -22,9 +22,22 @@
         "geo",
         "ai-crawlers"
       ],
-      "skills": [
-        "./skills/llms-visibility"
-      ]
+      "skills": ["./skills/llms-visibility"]
+    },
+    {
+      "name": "good-readme",
+      "source": "./",
+      "strict": false,
+      "description": "Write or improve a README.md for an open source project based on Evil Martians real experience of successfully promoting PostCSS, Nano ID, and other real popular projects",
+      "category": "docs",
+      "keywords": [
+        "readme",
+        "documentation",
+        "open-source",
+        "technical-writing"
+      ],
+      "skills": ["./skills/good-readme"]
     }
   ]
 }
+
