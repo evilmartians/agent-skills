@@ -5,7 +5,7 @@ description: 'Write or improve a README.md for an open source project. Use this 
 
 # Write a good README
 
-Apply the structure below when creating or improving a README. Companion to <https://evilmartians.com/chronicles/how-to-make-your-open-source-popular>.
+Apply the structure below when creating or improving a README. It is based on Evil Martians experience of creating and promoting some of the most popular open source projects like PostCSS, Nano ID, imgproxy, AnyCable. Companion to <https://evilmartians.com/chronicles/how-to-make-your-open-source-popular>.
 
 **Never invent facts.** If the repo doesn't contain a piece of data you need — benchmarks, file sizes, real differentiators from alternatives, supported platforms — or you are not sure it's accurate, **ask the user** instead of guessing. A README with fabricated numbers is worse than one without numbers.
 
@@ -55,9 +55,9 @@ Nano ID's opener demonstrates steps 1–3 on one screen:
 
 A tiny, secure, URL-friendly, unique string ID generator for JavaScript.
 
-* **Small.** 118 bytes (minified and brotlied). No dependencies.
-* **Fast.** 50% faster than UUID.
-* **Safe.** It uses hardware random generator. Can be used in clusters.
+- **Small.** 118 bytes (minified and brotlied). No dependencies.
+- **Fast.** 50% faster than UUID.
+- **Safe.** It uses hardware random generator. Can be used in clusters.
 
 ```js
 import { nanoid } from 'nanoid'
