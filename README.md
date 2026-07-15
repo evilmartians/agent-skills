@@ -28,21 +28,20 @@ npx skills add evilmartians/agent-skills --skill llms-visibility -a claude-code 
 
 Pass your agent to `-a`: `claude-code`, `codex`, `cursor`, `gemini-cli`, or `github-copilot`. Drop `-g` to install into the current project instead of your home directory.
 
-Claude Code can install this repo as a plugin instead:
+Claude Code can install a skill from this repo's plugin marketplace instead:
 
 ```sh
 claude plugin marketplace add evilmartians/agent-skills
 claude plugin install llms-visibility@evilmartians
 ```
 
-Codex can too:
+Alternatively, GitHub CLI's `gh skill` can install a skill and prompts you to pick which agent to install it into:
 
 ```sh
-codex plugin marketplace add evilmartians/agent-skills
-codex plugin install llms-visibility@evilmartians
+gh skill install evilmartians/agent-skills llms-visibility
 ```
 
-Or copy the skill folder into your agent's skills directory yourself: `~/.claude/skills` for Claude Code, `~/.codex/skills` for Codex, or `.agents/skills` to install it into a single project. Copy the whole folder, not just the `SKILL.md`, since a skill can ship scripts, references, and other assets alongside it.
+Or copy the skill folder into a skills directory yourself: `.claude/skills` for Claude Code, `.codex/skills` for Codex, or the agent-agnostic `.agents/skills`, which any agent reads. Prefix the path with `~/` to install it globally, or use it at a project root to keep it local. Copy the whole folder, not just the `SKILL.md`, since a skill can ship scripts, references, and other assets alongside it.
 
 ## Adding a skill
 
