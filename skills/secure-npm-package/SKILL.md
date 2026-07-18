@@ -240,7 +240,9 @@ For a personal account, ask the user to confirm 2FA is on at <https://github.com
 > - Target tags: `Include all tags`
 > - Tag rules: enable **Restrict creations**
 
-Also recommend a second ruleset with `Restrict deletions`, `Restrict updates`, and `Block force pushes` (bypass for admins). If `gh` is authenticated with admin scope, offer to create both rulesets via `gh api repos/<owner>/<repo>/rulesets -X POST` instead of clicking.
+**Immutable releases** — once a release is published, its tag and assets can never be changed or deleted, so an attacker can't silently swap artifacts under an existing version:
+
+> Open `https://github.com/<owner>/<repo>/settings` and in the **Releases** section enable **Immutable releases**.
 
 ## Not yet published packages
 
@@ -292,5 +294,5 @@ Show the user which dependency branches pull in the most nested packages, and of
 4. Cooldown configured and dependency `postinstall` scripts disabled (by version or by config).
 5. Every public package has a Trusted Publisher (stage-only) and tokens disallowed — confirmed by the user, per package.
 6. No `NPM_TOKEN` left in workflows or repo secrets.
-7. Tag ruleset active; 2FA required.
+7. Tag ruleset active; immutable releases enabled; 2FA required.
 8. User knows the tag → approve release flow and has run a test release.
