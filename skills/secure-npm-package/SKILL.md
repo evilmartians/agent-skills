@@ -269,7 +269,7 @@ End by showing the new release flow, with the tag in the repo's detected format:
 git add .
 git commit -m 'Release 1.0.1 version'
 git tag v1.0.1   # `git tag -s` is better if signing keys are set up
-git push origin main --tags
+git push origin v1.0.1
 ```
 
 Then CI stages the release, and the user approves it in **Staged Packages** (npm user menu on npmjs.com) or with `npm stage approve` — this is the manual 2FA step that hacked CI can't fake. Suggest a patch release as an end-to-end test of the pipeline.
