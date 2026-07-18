@@ -37,6 +37,21 @@
         "technical-writing"
       ],
       "skills": ["./skills/good-readme"]
+    },
+    {
+      "name": "secure-npm-package",
+      "source": "./",
+      "strict": false,
+      "description": "Set up a secure npm package release process — Trusted Publishing with staged publishes from GitHub Actions — and walk the user through the required npmjs.com and GitHub settings",
+      "category": "security",
+      "keywords": [
+        "npm",
+        "supply-chain",
+        "trusted-publishing",
+        "provenance",
+        "github-actions"
+      ],
+      "skills": ["./skills/secure-npm-package"]
     }
   ]
 }
