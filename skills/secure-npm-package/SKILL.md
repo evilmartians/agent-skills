@@ -81,6 +81,7 @@ The core rules, whatever the project's shape:
 - Build in a **separate job**, pass output via artifacts. Only the publish job gets `id-token: write`; every job gets `contents: read` and `persist-credentials: false` on checkout.
 - `--ignore-scripts` on every install and on publish.
 - `npm stage publish`, not `npm publish` — CI stages the release, a human approves it with 2FA.
+- **Use `npm` for the publish command even when the project uses pnpm, yarn, or bun.** . The only exception is a project that genuinely needs its own package manager's staged-publish command (e.g. `workspace:` or `beforePacking`); there, use that tool's command instead.
 - If there is no build script, drop the build job and the artifact steps entirely (best case — see [Nano ID's workflow](https://github.com/nanostores/nanostores/blob/main/.github/workflows/release.yml)).
 
 Template (adapt Node version, build output path, and install commands to the project's package manager, update versions to latest keeping SHA-commits pinning):
@@ -222,6 +223,8 @@ For bun, add to `bunfig.toml`:
 minimumReleaseAge = 259200
 ```
 
+**pnpm 11+ already turns cooldown on** — `minimumReleaseAge` defaults to `1440` (1 day). So on pnpm 11 you're only _raising_ it to 3 days (`4320`).
+
 ### 3e. Make sure `postinstall` scripts are disabled locally
 
 Dependency `postinstall`/`preinstall` scripts run arbitrary code on every developer machine. npm 12, pnpm 10, yarn 4.14, and bun disable them by default — check the version actually in use (`packageManager` field, `npm --version` etc.):
@@ -232,12 +235,6 @@ Dependency `postinstall`/`preinstall` scripts run arbitrary code on every develo
   ```bash
   npm config set --location=project ignore-scripts true
   yarn config set enableScripts false
-  ```
-
-  For pnpm, add to `package.json` (an empty allowlist blocks all dependency build scripts):
-
-  ```json
-  "pnpm": { "onlyBuiltDependencies": [] }
   ```
 
   Warn with npm's `ignore-scripts=true`: it also skips the project's own lifecycle scripts (`prepare`, husky hooks) — check nothing depends on them.
@@ -259,7 +256,7 @@ In a monorepo, some packages may be published and others not — split the check
 
 - **npm settings are per package.** Every public workspace package needs its own Trusted Publisher entry pointing at the same repo and the same `publish.yaml`. Emit one settings link per package; missing one leaves that package unprotected.
 - One publish workflow can release everything: `npm stage publish --ignore-scripts --workspaces`, or `--workspace=<name>` per package if versions are tagged independently (adjust the tag trigger to the repo's scheme, e.g. `<name>@*`).
-- If internal dependencies use the `workspace:` protocol, plain `npm publish` will not rewrite them to real versions — the package must be published by pnpm/yarn or from a prepared publish directory. Check whether the project's package manager version supports staged/trusted publishing; if it doesn't, tell the user the tradeoff and decide together instead of silently downgrading security.
+- **Publish with `npm`, unless the package relies on a pnpm-only feature** npm can't reproduce — the `workspace:` protocol, or a `beforePacking` hook in `.pnpmfile.cjs`. Then publish with `pnpm stage publish` instead. In that case drop `actions/setup-node` from the publish job and let pnpm provide Node (`use-node-version` in `pnpm-workspace.yaml`) — one tool in the critical job, not two. First check the pnpm version supports staged/trusted publishing; if not, tell the user the tradeoff rather than silently downgrading security.
 - **The `--omit=dev` hack.** In a monorepo, keep build tools (compiler, bundler) in the root `dependencies` and test/lint tools in `devDependencies`, then install in the build job with `npm ci --omit=dev --ignore-scripts` — the build runs without linters, test runners, and their nested dependencies, shrinking the attack surface of the critical job. Moving packages between `dependencies` and `devDependencies` changes the published metadata, so **ask the user before editing `dependencies`**; on their yes, move the build tools and switch the build job's install to `--omit=dev`.
 
 ## Tell the user how to release now
