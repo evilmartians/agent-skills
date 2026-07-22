@@ -9,7 +9,7 @@ Set up a release process where no npm token exists to steal, releases can come o
 
 ## How to run this skill
 
-The setup is half repo files, half settings on npmjs.com and github.com that **only the user can change**. Do the repo files yourself. For the settings, produce click-by-click instructions with **direct links resolved from the repo's real data** — package names from `package.json`, owner/repo from the `repository` field — and the exact values to enter. Then wait for the user to confirm each block before verifying and moving on. Never say "go to your package settings"; always give the resolved URL.
+The setup is half repo files, half settings on npmjs.com and github.com that **only the user can change**. Present the manual settings _first_, before you touch any files — the settings are the part that needs the user, and if you do the repo changes first the instructions scroll past and get missed. For the settings, produce click-by-click instructions with **direct links resolved from the repo's real data** — package names from `package.json`, owner/repo from the `repository` field — and the exact values to enter. Wait for the user to confirm each block before verifying and moving on. Then, once the settings are handed off, do the repo files yourself. Never say "go to your package settings"; always give the resolved URL.
 
 ## Step 1: Gather facts
 
@@ -24,11 +24,55 @@ Collect before changing anything:
 - **Build step.** Is there a `build` script, and what directory does it emit?
 - **Existing workflows** in `.github/workflows/`, especially any current release workflow and any use of `secrets.NPM_TOKEN`.
 
-## Step 2: Repo changes (do these yourself)
+## Step 2: Manual settings (ask the user first)
 
-Ask before overwriting an existing release workflow; carry over intentional extras (changelog generation, GitHub Releases) into separate jobs without `id-token`.
+Present these _before_ changing any repo files, so the user doesn't miss them. Give a numbered checklist with resolved links and exact values, grouped by website. The workflow filename you reference below (`publish.yaml`) is the one you'll create in Step 3 — the name is fixed, so the user can set this up in parallel. After the user confirms, verify what you can (`npm view <name>`, `gh api repos/<owner>/<repo>/rulesets` if `gh` is authenticated) and re-ask about the rest.
 
-### 2a. `.github/workflows/publish.yaml`
+### On npmjs.com — for every public package
+
+Repeat this block per package in a monorepo, each with its own link:
+
+> Open `https://www.npmjs.com/package/<name>/settings` (you must be logged in as a maintainer).
+>
+> 1. In **Trusted Publisher** select **GitHub Actions** and enter:
+>    - Organization or user: `<owner>`
+>    - Repository: `<repo>`
+>    - Workflow filename: `publish.yaml`
+>    - Environment: leave empty
+>    - Enable only **Allow npm stage publish** — deny plain `npm publish`, so even hacked CI can't release without your approval.
+> 2. In **Publishing access** select **Require two-factor authentication and disallow tokens**. This revokes all existing tokens — warn me first if any other automation publishes this package with a token.
+
+If the old setup used an `NPM_TOKEN` secret, also:
+
+> Delete the `NPM_TOKEN` secret at `https://github.com/<owner>/<repo>/settings/secrets/actions` and revoke the token itself at <https://www.npmjs.com/settings/~/tokens>.
+
+### On github.com
+
+**2FA for everyone.** If the repo belongs to an organization:
+
+> Open `https://github.com/organizations/<org>/settings/security` and enable **Require two-factor authentication** under Authentication security.
+
+For a personal account, ask the user to confirm 2FA is on at <https://github.com/settings/security> — prefer a hardware key or passkey.
+
+**Tag ruleset** — with CI publishing, whoever can push a `v*` tag can trigger a release, so restrict tag creation:
+
+> Open `https://github.com/<owner>/<repo>/settings/rules/new?target=tag` and create:
+>
+> - Ruleset Name: `Tags only by admins`
+> - Enforcement status: `Active`
+> - Bypass list: add `Repository admins`
+> - Target tags: `Include all tags`
+> - Tag rules: enable **Restrict creations**
+
+**Immutable releases** — once a release is published, its tag and assets can never be changed or deleted, so an attacker can't silently swap artifacts under an existing version:
+
+> Open `https://github.com/<owner>/<repo>/settings` and in the **Releases** section enable **Immutable releases**.
+
+## Step 3: Repo changes (do these yourself)
+
+Once the user is working through the settings, make the repo changes. Ask before overwriting an existing release workflow; carry over intentional extras (changelog generation, GitHub Releases) into separate jobs without `id-token`.
+
+### 3a. `.github/workflows/publish.yaml`
 
 The core rules, whatever the project's shape:
 
@@ -37,6 +81,7 @@ The core rules, whatever the project's shape:
 - Build in a **separate job**, pass output via artifacts. Only the publish job gets `id-token: write`; every job gets `contents: read` and `persist-credentials: false` on checkout.
 - `--ignore-scripts` on every install and on publish.
 - `npm stage publish`, not `npm publish` — CI stages the release, a human approves it with 2FA.
+- **Use `npm` for the publish command even when the project uses pnpm, yarn, or bun.** . The only exception is a project that genuinely needs its own package manager's staged-publish command (e.g. `workspace:` or `beforePacking`); there, use that tool's command instead.
 - If there is no build script, drop the build job and the artifact steps entirely (best case — see [Nano ID's workflow](https://github.com/nanostores/nanostores/blob/main/.github/workflows/release.yml)).
 
 Template (adapt Node version, build output path, and install commands to the project's package manager, update versions to latest keeping SHA-commits pinning):
@@ -121,9 +166,9 @@ jobs:
         run: npm stage publish --ignore-scripts
 ```
 
-If an old workflow used `secrets.NPM_TOKEN`, remove it from the YAML now and add secret deletion to the manual checklist in Step 3.
+If an old workflow used `secrets.NPM_TOKEN`, remove it from the YAML now — deleting the secret and revoking the token is already covered by the Step 2 checklist (from the facts gathered in Step 1).
 
-### 2b. Run zizmor locally and fix every finding
+### 3b. Run zizmor locally and fix every finding
 
 ```bash
 docker run --rm -t -v "$(pwd):/repo:ro" ghcr.io/zizmorcore/zizmor:latest /repo/.github/workflows
@@ -131,7 +176,7 @@ docker run --rm -t -v "$(pwd):/repo:ro" ghcr.io/zizmorcore/zizmor:latest /repo/.
 
 Run it yourself if Docker is available; otherwise ask the user to run this command and paste the output. Fix everything it reports in the existing workflows (`pull_request_target` misuse, shell injection, unpinned actions), then re-run until clean. Remind the user to **delete stale branches** that still contain old vulnerable workflows — attackers exploit old branches (that's how Nx was hit).
 
-### 2c. `.github/workflows/check-workflows.yaml` — keep linting on CI
+### 3c. `.github/workflows/check-workflows.yaml` — keep linting on CI
 
 ```yaml
 name: Lint CI workflows
@@ -157,7 +202,7 @@ jobs:
           advanced-security: false
 ```
 
-### 2d. Dependency cooldown
+### 3d. Dependency cooldown
 
 Ask user what cooldown they prefer, the fast (1 day) or more secure (3 days). Use this fact:
 
@@ -178,7 +223,9 @@ For bun, add to `bunfig.toml`:
 minimumReleaseAge = 259200
 ```
 
-### 2e. Make sure `postinstall` scripts are disabled locally
+**pnpm 11+ already turns cooldown on** — `minimumReleaseAge` defaults to `1440` (1 day). So on pnpm 11 you're only _raising_ it to 3 days (`4320`).
+
+### 3e. Make sure `postinstall` scripts are disabled locally
 
 Dependency `postinstall`/`preinstall` scripts run arbitrary code on every developer machine. npm 12, pnpm 10, yarn 4.14, and bun disable them by default — check the version actually in use (`packageManager` field, `npm --version` etc.):
 
@@ -190,59 +237,9 @@ Dependency `postinstall`/`preinstall` scripts run arbitrary code on every develo
   yarn config set enableScripts false
   ```
 
-  For pnpm, add to `package.json` (an empty allowlist blocks all dependency build scripts):
-
-  ```json
-  "pnpm": { "onlyBuiltDependencies": [] }
-  ```
-
   Warn with npm's `ignore-scripts=true`: it also skips the project's own lifecycle scripts (`prepare`, husky hooks) — check nothing depends on them.
 
 If some dependency genuinely needs its build script, allowlist that one package instead of re-enabling everything.
-
-## Step 3: Manual settings (walk the user through)
-
-Present these as a numbered checklist with resolved links and exact values. Group by website. After the user confirms, verify what you can (`npm view <name>`, `gh api repos/<owner>/<repo>/rulesets` if `gh` is authenticated) and re-ask about the rest.
-
-### On npmjs.com — for every public package
-
-Repeat this block per package in a monorepo, each with its own link:
-
-> Open `https://www.npmjs.com/package/<name>/settings` (you must be logged in as a maintainer).
->
-> 1. In **Trusted Publisher** select **GitHub Actions** and enter:
->    - Organization or user: `<owner>`
->    - Repository: `<repo>`
->    - Workflow filename: `publish.yaml`
->    - Environment: leave empty
->    - Enable only **Allow npm stage publish** — deny plain `npm publish`, so even hacked CI can't release without your approval.
-> 2. In **Publishing access** select **Require two-factor authentication and disallow tokens**. This revokes all existing tokens — warn me first if any other automation publishes this package with a token.
-
-If the old setup used an `NPM_TOKEN` secret, also:
-
-> Delete the `NPM_TOKEN` secret at `https://github.com/<owner>/<repo>/settings/secrets/actions` and revoke the token itself at <https://www.npmjs.com/settings/~/tokens>.
-
-### On github.com
-
-**2FA for everyone.** If the repo belongs to an organization:
-
-> Open `https://github.com/organizations/<org>/settings/security` and enable **Require two-factor authentication** under Authentication security.
-
-For a personal account, ask the user to confirm 2FA is on at <https://github.com/settings/security> — prefer a hardware key or passkey.
-
-**Tag ruleset** — with CI publishing, whoever can push a `v*` tag can trigger a release, so restrict tag creation:
-
-> Open `https://github.com/<owner>/<repo>/settings/rules/new?target=tag` and create:
->
-> - Ruleset Name: `Tags only by admins`
-> - Enforcement status: `Active`
-> - Bypass list: add `Repository admins`
-> - Target tags: `Include all tags`
-> - Tag rules: enable **Restrict creations**
-
-**Immutable releases** — once a release is published, its tag and assets can never be changed or deleted, so an attacker can't silently swap artifacts under an existing version:
-
-> Open `https://github.com/<owner>/<repo>/settings` and in the **Releases** section enable **Immutable releases**.
 
 ## Not yet published packages
 
@@ -250,7 +247,7 @@ Trusted Publishing is configured on the package's npm settings page, which doesn
 
 1. Check the name is actually free (an E404 with the registry reachable) and warn about typosquatting-adjacent names.
 2. The **first release happens manually** from the maintainer's machine: `npm publish --ignore-scripts` (add `--access public` for a scoped package), authenticating interactively with 2FA. No token, no CI for this one release; it won't have the provenance badge — every later release will.
-3. Immediately after the first publish, run the full Step 3 checklist for the new package (Trusted Publisher, stage-only, disallow tokens).
+3. Immediately after the first publish, run the full Step 2 checklist for the new package (Trusted Publisher, stage-only, disallow tokens).
 4. All later releases go through the tag → CI → staged approval flow.
 
 In a monorepo, some packages may be published and others not — split the checklist accordingly.
@@ -259,7 +256,7 @@ In a monorepo, some packages may be published and others not — split the check
 
 - **npm settings are per package.** Every public workspace package needs its own Trusted Publisher entry pointing at the same repo and the same `publish.yaml`. Emit one settings link per package; missing one leaves that package unprotected.
 - One publish workflow can release everything: `npm stage publish --ignore-scripts --workspaces`, or `--workspace=<name>` per package if versions are tagged independently (adjust the tag trigger to the repo's scheme, e.g. `<name>@*`).
-- If internal dependencies use the `workspace:` protocol, plain `npm publish` will not rewrite them to real versions — the package must be published by pnpm/yarn or from a prepared publish directory. Check whether the project's package manager version supports staged/trusted publishing; if it doesn't, tell the user the tradeoff and decide together instead of silently downgrading security.
+- **Publish with `npm`, unless the package relies on a pnpm-only feature** npm can't reproduce — the `workspace:` protocol, or a `beforePacking` hook in `.pnpmfile.cjs`. Then publish with `pnpm stage publish` instead. In that case drop `actions/setup-node` from the publish job and let pnpm provide Node (`use-node-version` in `pnpm-workspace.yaml`) — one tool in the critical job, not two. First check the pnpm version supports staged/trusted publishing; if not, tell the user the tradeoff rather than silently downgrading security.
 - **The `--omit=dev` hack.** In a monorepo, keep build tools (compiler, bundler) in the root `dependencies` and test/lint tools in `devDependencies`, then install in the build job with `npm ci --omit=dev --ignore-scripts` — the build runs without linters, test runners, and their nested dependencies, shrinking the attack surface of the critical job. Moving packages between `dependencies` and `devDependencies` changes the published metadata, so **ask the user before editing `dependencies`**; on their yes, move the build tools and switch the build job's install to `--omit=dev`.
 
 ## Tell the user how to release now
