@@ -32,7 +32,7 @@ Present these _before_ changing any repo files, so the user doesn't miss them. G
 
 Repeat this block per package in a monorepo, each with its own link:
 
-> Open `https://www.npmjs.com/package/<name>/settings` (you must be logged in as a maintainer).
+> Open `https://www.npmjs.com/package/<name>/access` (you must be logged in as a maintainer).
 >
 > 1. In **Trusted Publisher** select **GitHub Actions** and enter:
 >    - Organization or user: `<owner>`
