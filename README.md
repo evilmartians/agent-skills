@@ -2,14 +2,11 @@
 
 Agent Skills we build and use at Evil Martians, packaged so you can install them into your own AI coding agent.
 
-
-<a href="https://evilmartians.com/?utm_source=agent-skills">
-<img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg" alt="Sponsored by Evil Martians" width="100%" height="54"></a>
-
-
 A [skill](https://agentskills.io/specification) is a folder with a `SKILL.md` in it: a name, a description that tells the agent when to reach for it, and the instructions to follow once it does. The format is shared across agents, so these work the same in Claude Code, Codex, Cursor, Gemini CLI, and GitHub Copilot.
 
 Browse them at **<https://evilmartians.com/agent-skills>**.
+
+<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="Evil Martians logo" width="22" height="16" /> <b>Agent Skills</b> are built by <b><a href="https://evilmartians.com/">Evil Martians</a></b>, an American design and engineering consultancy for <b>developer tools, AI, and cybersecurity startups</b>.
 
 ## Skills
 
