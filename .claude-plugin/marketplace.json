@@ -52,6 +52,21 @@
         "github-actions"
       ],
       "skills": ["./skills/secure-npm-package"]
+    },
+    {
+      "name": "skills-visibility",
+      "source": "./",
+      "strict": false,
+      "description": "Publish a catalog of agent skills and make it discoverable and installable by AI coding agents — a .well-known discovery index, self-hosted archives with integrity digests, and multiple install commands (npx skills, gh skill, Claude plugin marketplace, curl)",
+      "category": "ai",
+      "keywords": [
+        "agent-skills",
+        "discovery",
+        "well-known",
+        "distribution",
+        "packaging"
+      ],
+      "skills": ["./skills/skills-visibility"]
     }
   ]
 }
