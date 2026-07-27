@@ -9,7 +9,17 @@ Set up a release process where no npm token exists to steal, releases can come o
 
 ## How to run this skill
 
-The setup is half repo files, half settings on npmjs.com and github.com that **only the user can change**. Present the manual settings _first_, before you touch any files — the settings are the part that needs the user, and if you do the repo changes first the instructions scroll past and get missed. For the settings, produce click-by-click instructions with **direct links resolved from the repo's real data** — package names from `package.json`, owner/repo from the `repository` field — and the exact values to enter. Wait for the user to confirm each block before verifying and moving on. Then, once the settings are handed off, do the repo files yourself. Never say "go to your package settings"; always give the resolved URL.
+The setup is half repo files, half settings on npmjs.com and github.com that **only the user can change**. The settings are the part that needs the user, and if you do the repo changes first the instructions scroll past and get missed — so the user acts before you do. For the settings, produce click-by-click instructions with **direct links resolved from the repo's real data** — package names from `package.json`, owner/repo from the `repository` field — and the exact values to enter. Never say "go to your package settings"; always give the resolved URL.
+
+The order is strict — **questions, then manual settings, then CLI and files**:
+
+1. **Gather facts** (Step 1), read-only and silent, to learn the project's shape.
+2. **Ask all questions together.** Gather every decision you need from the user — cooldown length (1 or 3 days), whether to move build tools into `dependencies` for the `--omit=dev` hack in a monorepo, the `repository` field if it's missing, and anything else the project raises — and ask them all in one message. Do not drip questions out one at a time. Wait for the answers.
+3. **Hand off the manual settings** (Step 2) on npmjs.com and github.com and ask the user to make every change.
+4. **Wait for the user to confirm** they have changed everything — do not run any repo-changing command or touch any files until they say so.
+5. **Run the CLI and change files** (Step 3).
+
+The only commands allowed before the user answers the questions and confirms the settings are the **read-only** fact-gathering ones in Step 1 (`npm view`, `git tag`, reading `package.json`). Every mutating command — `npm config set`, writing workflow files, editing `package.json` — waits for Step 3.
 
 ## Step 1: Gather facts
 
@@ -26,7 +36,7 @@ Collect before changing anything:
 
 ## Step 2: Manual settings (ask the user first)
 
-Present these _before_ changing any repo files, so the user doesn't miss them. Give a numbered checklist with resolved links and exact values, grouped by website. The workflow filename you reference below (`publish.yaml`) is the one you'll create in Step 3 — the name is fixed, so the user can set this up in parallel. After the user confirms, verify what you can (`npm view <name>`, `gh api repos/<owner>/<repo>/rulesets` if `gh` is authenticated) and re-ask about the rest.
+Present these _before_ changing any repo files, so the user doesn't miss them. Give a numbered checklist with resolved links and exact values, grouped by website. The workflow filename you reference below (`publish.yaml`) is fixed — you'll create the file in Step 3, but the user can enter the name now without waiting for it. Ask the user to work through the whole checklist and then confirm back that everything is done. After they confirm, verify what you can (`npm view <name>`, `gh api repos/<owner>/<repo>/rulesets` if `gh` is authenticated) and re-ask about anything still not set. Only once the settings are confirmed do you move on to the repo changes.
 
 ### On npmjs.com — for every public package
 
@@ -70,7 +80,7 @@ For a personal account, ask the user to confirm 2FA is on at <https://github.com
 
 ## Step 3: Repo changes (do these yourself)
 
-Once the user is working through the settings, make the repo changes. Ask before overwriting an existing release workflow; carry over intentional extras (changelog generation, GitHub Releases) into separate jobs without `id-token`.
+**Do not start until the user confirms they have changed everything in Step 2.** Ask them to confirm the npm and github settings are all done, and wait for their explicit yes. Only then make the repo changes. Ask before overwriting an existing release workflow; carry over intentional extras (changelog generation, GitHub Releases) into separate jobs without `id-token`.
 
 ### 3a. `.github/workflows/publish.yaml`
 
@@ -204,7 +214,7 @@ jobs:
 
 ### 3d. Dependency cooldown
 
-Ask user what cooldown they prefer, the fast (1 day) or more secure (3 days). Use this fact:
+Apply the cooldown the user already chose in the batched questions — the fast (1 day) or more secure (3 days). If for some reason it wasn't settled then, use this fact to decide:
 
 > A 3-day delay before adopting new dependency versions blocks ~94% of malicious releases (median takedown is 14 hours).
 
@@ -257,7 +267,7 @@ In a monorepo, some packages may be published and others not — split the check
 - **npm settings are per package.** Every public workspace package needs its own Trusted Publisher entry pointing at the same repo and the same `publish.yaml`. Emit one settings link per package; missing one leaves that package unprotected.
 - One publish workflow can release everything: `npm stage publish --ignore-scripts --workspaces`, or `--workspace=<name>` per package if versions are tagged independently (adjust the tag trigger to the repo's scheme, e.g. `<name>@*`).
 - **Publish with `npm`, unless the package relies on a pnpm-only feature** npm can't reproduce — the `workspace:` protocol, or a `beforePacking` hook in `.pnpmfile.cjs`. Then publish with `pnpm stage publish` instead. In that case drop `actions/setup-node` from the publish job and let pnpm provide Node (`use-node-version` in `pnpm-workspace.yaml`) — one tool in the critical job, not two. First check the pnpm version supports staged/trusted publishing; if not, tell the user the tradeoff rather than silently downgrading security.
-- **The `--omit=dev` hack.** In a monorepo, keep build tools (compiler, bundler) in the root `dependencies` and test/lint tools in `devDependencies`, then install in the build job with `npm ci --omit=dev --ignore-scripts` — the build runs without linters, test runners, and their nested dependencies, shrinking the attack surface of the critical job. Moving packages between `dependencies` and `devDependencies` changes the published metadata, so **ask the user before editing `dependencies`**; on their yes, move the build tools and switch the build job's install to `--omit=dev`.
+- **The `--omit=dev` hack.** In a monorepo, keep build tools (compiler, bundler) in the root `dependencies` and test/lint tools in `devDependencies`, then install in the build job with `npm ci --omit=dev --ignore-scripts` — the build runs without linters, test runners, and their nested dependencies, shrinking the attack surface of the critical job. Moving packages between `dependencies` and `devDependencies` changes the published metadata, so this is one of the decisions you **ask up front in the batched questions**, not mid-edit; on the user's yes, move the build tools and switch the build job's install to `--omit=dev`.
 
 ## Tell the user how to release now
 
