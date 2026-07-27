@@ -15,6 +15,7 @@ Browse them at **<https://evilmartians.com/agent-skills>**.
 | [good-readme](skills/good-readme/SKILL.md) | Writes or improves a README.md for an open source project, based on Evil Martians' real experience of successfully promoting PostCSS, Nano ID, and other popular projects. Companion to [How to make your open source popular](https://evilmartians.com/chronicles/how-to-make-your-open-source-popular). |
 | [llms-visibility](skills/llms-visibility/SKILL.md) | Makes a site visible and readable to LLMs and AI agents. Covers Markdown routes, `Accept` content negotiation, `llms.txt`, and crawler signals in `robots.txt`. Pushes back on popular patterns that don't work. Companion to [How to make your website visible to LLMs](https://evilmartians.com/chronicles/how-to-make-your-website-visible-to-llms). |
 | [secure-npm-package](skills/secure-npm-package/SKILL.md) | Sets up a secure npm release process — Trusted Publishing with staged publishes from GitHub Actions, hardened workflows, dependency cooldowns — and walks the user through the manual npmjs.com and GitHub settings with links resolved for their repo. |
+| [skills-visibility](skills/skills-visibility/SKILL.md) | Publishes a catalog of agent skills and makes it discoverable and installable by AI coding agents — a `.well-known` discovery index, self-hosted archives with integrity digests, and several install commands. Pushes back on pointing an index at raw GitHub URLs. |
 
 ## Install
 
