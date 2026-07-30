@@ -67,6 +67,19 @@
         "packaging"
       ],
       "skills": ["./skills/skills-visibility"]
+    },
+    {
+      "name": "tailwind-best-practices",
+      "source": "./",
+      "strict": false,
+      "description": "Write and audit Tailwind CSS with practices that keep a fast-to-write codebase maintainable — design tokens, grouped tokens, consistent class ordering, and fixed variants for design-system components",
+      "category": "frontend",
+      "keywords": [
+        "tailwind",
+        "css",
+        "dx"
+      ],
+      "skills": ["./skills/tailwind-best-practices"]
     }
   ]
 }
