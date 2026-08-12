@@ -5,7 +5,7 @@ description: 'Publish a catalog of agent skills and make it discoverable to AI c
 
 # Make agent skills discoverable
 
-Apply the steps below to publish a catalog of [agent skills](https://agentskills.io/) and make it findable and installable by AI coding agents.
+Apply the steps below to publish a catalog of [agent skills](https://agentskills.io/) and make it findable and installable by AI coding agents. Companion to <https://evilmartians.com/chronicles/publishing-agent-skills-discovery-index>.
 
 An agent skill is a `SKILL.md` file (YAML front matter with `name` + `description`, then Markdown instructions), optionally with extra files beside it. Publishing one skill is easy. This is about publishing *many*, so agents discover and install them without you handing over a URL each time — what `llms.txt` does for pages, done for skills.
 
