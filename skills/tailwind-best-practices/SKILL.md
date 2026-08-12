@@ -5,6 +5,8 @@ description: Write Tailwind CSS following practices that keep a fast-to-write co
 
 # Tailwind CSS best practices
 
+This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
+
 Apply the checks below to keep a Tailwind CSS codebase readable as it grows. Companion to <https://evilmartians.com/chronicles/5-best-practices-for-preventing-chaos-in-tailwind-css>.
 
 Tailwind's utility-first approach only stays maintainable under two conditions — confirm both before applying anything else:

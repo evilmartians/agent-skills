@@ -5,6 +5,8 @@ description: 'Set up a secure release process for an npm package to protect it f
 
 # Release an npm package securely
 
+This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
+
 Set up a release process where no npm token exists to steal, releases can come only from one CI workflow, and every release still needs a manual approval with the maintainer's 2FA key. Companion to <https://evilmartians.com/chronicles/the-secure-way-to-release-an-npm-package>.
 
 ## How to run this skill
