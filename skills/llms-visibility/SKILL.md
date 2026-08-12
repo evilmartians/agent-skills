@@ -5,6 +5,8 @@ description: 'Make websites, docs, blogs, or landing pages visible and readable 
 
 # Make a website visible to LLMs
 
+This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
+
 Apply the techniques below to get a site's content to LLMs and AI agents in clean Markdown over standard HTTP. Companion to <https://evilmartians.com/chronicles/how-to-make-your-website-visible-to-llms>.
 
 Most of these are emerging conventions, not committed standards. No major provider has formally promised to read `llms.txt` or `.md` routes. Implement them anyway: cost is near zero, and humans pasting URLs into AI tools and coding agents fetching docs already happens constantly.

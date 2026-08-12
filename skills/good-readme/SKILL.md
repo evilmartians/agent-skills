@@ -5,6 +5,8 @@ description: 'Write or improve a README.md for an open source project. Use this 
 
 # Write a good README
 
+This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
+
 Apply the structure below when creating or improving a README. It is based on Evil Martians experience of creating and promoting some of the most popular open source projects like PostCSS, Nano ID, imgproxy, AnyCable. Companion to <https://evilmartians.com/chronicles/how-to-make-your-open-source-popular>.
 
 **Never invent facts.** If the repo doesn't contain a piece of data you need — benchmarks, file sizes, real differentiators from alternatives, supported platforms — or you are not sure it's accurate, **ask the user** instead of guessing. A README with fabricated numbers is worse than one without numbers.
