@@ -81,7 +81,10 @@ agent-skills/testing-bundle.tar.gz         # bundle convenience archive (not an 
 
 ### 5. Write the discovery index
 
-Publish a `.well-known/agent-skills/index.json` at your domain root, served as `application/json`. This is the file installers look for; running `npx skills add https://yourdomain.com/agent-skills` fetches `https://yourdomain.com/.well-known/agent-skills/index.json`. Pass the full `https://` URL: hand an installer a bare domain or an `owner/repo` and it treats the source as a Git repo to clone, not a site to read an index from.
+Publish a `.well-known/agent-skills/index.json` at your domain root, served as `application/json`. This is the file installers look for: `npx skills add https://yourdomain.com` fetches `https://yourdomain.com/.well-known/agent-skills/index.json`. The source argument must be the bare origin with its scheme — `https://yourdomain.com`, nothing less and nothing more:
+
+- **No scheme** (`yourdomain.com`, `owner/repo`) — the installer treats it as a Git repo to clone, not a site to read an index from.
+- **A path** (`https://yourdomain.com/agent-skills`) — the installer looks for an index under that path only; it [no longer falls back](https://github.com/vercel-labs/skills/pull/1990) to the root one.
 
 The document isn't one vendor's format. An open [RFC from Cloudflare](https://github.com/cloudflare/agent-skills-discovery-rfc) extends [RFC 8615](https://www.rfc-editor.org/rfc/rfc8615) — the `.well-known/` convention behind `robots.txt` and `security.txt` — and points at the [agentskills.io discovery schema](https://agentskills.io/):
 
@@ -121,7 +124,7 @@ A bundle is represented *only* as its member skills, each a normal entry under i
 
 Expose several install methods, because your users live in different tools and a single command loses whoever doesn't use it. `SKILL.md` is a cross-agent standard, so one payload serves every agent — only the destination directory changes (`~/.claude/skills`, `~/.cursor/skills`, `~/.agents/skills`, `~/.copilot/skills`, `~/.gemini/skills`). Provide:
 
-- **`npx skills`** — reads your discovery index: `npx skills add https://yourdomain.com/agent-skills --skill <name> -a <agent> -g`. Omit `--skill` for an interactive pick-list, or pass `--skill '*'` for the whole catalog.
+- **`npx skills`** — reads your discovery index: `npx skills add https://yourdomain.com --skill <name> -a <agent> -g`. Omit `--skill` for an interactive pick-list, or pass `--skill '*'` for the whole catalog.
 - **`claude plugin`** — Claude's marketplace, and the best path for a bundle (one install pulls the whole set): `claude plugin marketplace add <owner>/<repo>` then `claude plugin install <name>@<marketplace>`. The `<marketplace>` half is the `name` from that repo's `.claude-plugin/marketplace.json`, which needn't match the repo's own name — read it, don't assume it.
 - **`gh skill`** — installs one `SKILL.md` from the repo: `gh skill install <owner>/<repo> <name>`. Not available for a bundle slug, which names no single skill directory.
 - **`curl`** — dependency-free, and the only method that needs nothing installed first. The command follows the shape from step 4:
@@ -147,7 +150,7 @@ You can't see a `curl` that runs on a laptop, but you can measure the parts you 
 - `curl -fsSL` on the same URL returns valid JSON listing every skill you meant to publish, and nothing you didn't.
 - For one entry, `curl -fsSL <its url> | sha256sum` matches the `digest` you published. This is the check that quietly fails when you hash something other than what you serve.
 - `tar -tzf <name>.tar.gz` lists `SKILL.md` at the archive root, not `<name>/SKILL.md`.
-- `npx skills add https://yourdomain.com/agent-skills --skill <name>` installs cleanly into the target agent's skills directory. Then ask the agent something the skill covers and watch whether it loads: that's the only test of whether the `description` earns its trigger.
+- `npx skills add https://yourdomain.com --skill <name>` installs cleanly into the target agent's skills directory. Then ask the agent something the skill covers and watch whether it loads: that's the only test of whether the `description` earns its trigger.
 
 ## Anti-patterns: do NOT do these
 
@@ -158,6 +161,7 @@ You can't see a `curl` that runs on a laptop, but you can measure the parts you 
 - **Inventing index fields the schema doesn't define** — a top-level `version`/`origin` key, a `bundles[]` array, or a per-skill `bundle` field. Anything extra is guesswork an installer won't read.
 - **Publishing a digest you can't reproduce.** Split hashing from archiving *and* leave the tarball nondeterministic (unpinned modes, unsorted members, live mtimes, no `gzip -n`) and the hash you advertised stops matching the file you serve, even though the skill didn't change.
 - **Skipping the digest.** An index without integrity hashes gives installers nothing to verify; a corrupted or swapped payload installs silently.
+- **Passing `npx skills` anything but the bare origin.** A path (`https://yourdomain.com/agent-skills`) scopes the lookup to an index under it with no fallback to the root; a scheme-less `yourdomain.com` is cloned as a Git repo. Pass `https://yourdomain.com`.
 - **A single install command.** It's cheap to offer several, and it's the difference between a reader installing or bouncing.
 
 ## Final check
