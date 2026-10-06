@@ -80,6 +80,21 @@
         "dx"
       ],
       "skills": ["./skills/tailwind-best-practices"]
+    },
+    {
+      "name": "web-video",
+      "source": "./",
+      "strict": false,
+      "description": "Encode a video for the web with a bundled ffmpeg script — AV1, HEVC, and H.264 MP4s plus a poster, or VP9 WebM and HEVC with alpha for transparent video — and embed it with the right source order",
+      "category": "frontend",
+      "keywords": [
+        "video",
+        "av1",
+        "ffmpeg",
+        "performance",
+        "transparency"
+      ],
+      "skills": ["./skills/web-video"]
     }
   ]
 }
