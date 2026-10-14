@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Production-grade Agent Skills from Evil Martians",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -22,7 +22,9 @@
         "geo",
         "ai-crawlers"
       ],
-      "skills": ["./skills/llms-visibility"]
+      "skills": [
+        "./skills/llms-visibility"
+      ]
     },
     {
       "name": "good-readme",
@@ -36,7 +38,9 @@
         "open-source",
         "technical-writing"
       ],
-      "skills": ["./skills/good-readme"]
+      "skills": [
+        "./skills/good-readme"
+      ]
     },
     {
       "name": "secure-npm-package",
@@ -51,7 +55,9 @@
         "provenance",
         "github-actions"
       ],
-      "skills": ["./skills/secure-npm-package"]
+      "skills": [
+        "./skills/secure-npm-package"
+      ]
     },
     {
       "name": "skills-visibility",
@@ -66,7 +72,9 @@
         "distribution",
         "packaging"
       ],
-      "skills": ["./skills/skills-visibility"]
+      "skills": [
+        "./skills/skills-visibility"
+      ]
     },
     {
       "name": "tailwind-best-practices",
@@ -79,7 +87,9 @@
         "css",
         "dx"
       ],
-      "skills": ["./skills/tailwind-best-practices"]
+      "skills": [
+        "./skills/tailwind-best-practices"
+      ]
     },
     {
       "name": "web-video",
@@ -94,8 +104,9 @@
         "performance",
         "transparency"
       ],
-      "skills": ["./skills/web-video"]
+      "skills": [
+        "./skills/web-video"
+      ]
     }
   ]
 }
-

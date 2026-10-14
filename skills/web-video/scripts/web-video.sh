@@ -17,6 +17,11 @@ VP9_CRF=30
 # SVT-AV1 logs on its own, past -loglevel: keep only its errors.
 export SVT_LOG=1
 
+# Every scale and pixel format conversion: Lanczos keeps downscaled text and UI
+# edges sharp where the default bicubic blurs them; chroma from every pixel;
+# exact rounding.
+sws=(-sws_flags lanczos+accurate_rnd+full_chroma_int+full_chroma_inp)
+
 # In a terminal, progress redraws in place twice a second. Piped to an agent or
 # a log, every redraw is another line, so report every 30 seconds instead.
 if [[ -t 2 ]]; then
@@ -34,7 +39,7 @@ usage() {
 Usage: $(basename "$0") [options] <video>
 
 Encodes <video> for the web as <name>.<format>.<ext> files next to it.
-  Opaque video:      AV1, HEVC, and H.264 MP4s and a JPEG poster
+  Opaque video:      AV1 (10-bit), HEVC, and H.264 MP4s and a JPEG poster
   Transparent video: VP9 WebM, HEVC MP4 with alpha (macOS only), and a PNG poster
 Video with see-through pixels gets the transparent formats; --opaque overrides it.
 
@@ -42,6 +47,9 @@ Options:
   -o, --output-dir DIR  write the files to DIR instead of next to the source
   -f, --formats LIST    encode only these, comma-separated:
                         av1,hevc,h264 (opaque) or vp9,hevc (transparent)
+      --opaque-formats LIST
+                        what opaque video gets when --formats isn't given
+                        (default: av1,hevc,h264)
       --opaque          flatten any transparency and encode as regular video
       --speed N         play N times faster (2, 1.5); 60fps, drops audio
       --max-width PX    downscale anything wider than PX, keeping the aspect ratio
@@ -58,6 +66,10 @@ Options:
 
 HEVC with alpha is encoded by avconvert's Apple presets, so --fast and the
 quality options don't apply to it.
+
+A project can set default options, like --opaque-formats av1,h264, in a
+.web-video file at the root of its git repository (or the current directory
+outside one). # starts a comment, and the command line overrides the file.
 EOF
 }
 
@@ -78,10 +90,12 @@ is_mv_hevc_alpha() {
   [[ "$codec" == "hevc" ]] && ffprobe -v debug "$1" 2>&1 | grep "nuh_layer_id: 1" > /dev/null
 }
 
-pix_fmt_has_alpha() {
+# pix_fmt_has <flag> <file>: alpha, rgb, palette. ffprobe prints "bgra,1,1,8"
+# up to 7.1 and "bgra,1" from 8.0 on.
+pix_fmt_has() {
   local pix_fmt
-  pix_fmt=$(ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt -of csv=p=0 "$1")
-  grep -q "^$pix_fmt,1," <<< "$(ffprobe -v error -show_pixel_formats -show_entries pixel_format=name:flags=alpha -of csv=p=0)"
+  pix_fmt=$(ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt -of csv=p=0 "$2")
+  grep -qE "^$pix_fmt,1(,|$)" <<< "$(ffprobe -v error -show_pixel_formats -show_entries pixel_format=name:flags=$1 -of csv=p=0)"
 }
 
 # A format with alpha doesn't mean the video uses it: every GIF has one. Scans
@@ -105,12 +119,41 @@ encode() {
   local label=$1 target=$2
   shift 2
   echo -e "\nEncoding $label..."
-  ffmpeg -i "$src" -map_metadata -1 "$@" -loglevel error "${stats[@]}" -y "$target"
+  ffmpeg -i "$src" -map_metadata -1 "${sws[@]}" "$@" -loglevel error "${stats[@]}" -y "$target"
   videos+=("$target")
+}
+
+# codecs <file> <format>: the codecs parameter for the type attribute, read from
+# the file. A level below the stream's, or an audio codec the file doesn't
+# carry, and the browser may skip the source or pick a worse one.
+codecs() {
+  local file=$1 video audio
+  case "$2" in
+    av1)
+      # ffprobe's level is the AV1 seq_level_idx: 8 is 4.0, enough for 1080p.
+      video=$(ffprobe -v error -select_streams v:0 -show_entries stream=level -of csv=p=0 "$file")
+      video=$(printf 'av01.0.%02dM.%s' "$video" "$([[ "$(ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt -of csv=p=0 "$file")" == *10le ]] && echo 10 || echo 08)")
+      ;;
+    h264)
+      # The avcC box: a version byte, then profile, constraint flags, level.
+      video=avc1.$(ffprobe -v error -select_streams v:0 -show_entries stream=extradata -show_data -of default=nw=1:nk=1 "$file" |
+        awk '/^00000000:/ { print toupper(substr($2, 3, 2) substr($3, 1, 4)); exit }')
+      ;;
+    hevc) video=hvc1 ;;
+    vp9) video=vp9 ;;
+  esac
+  audio=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$file")
+  case "$audio" in
+    aac) audio=", mp4a.40.2" ;;
+    opus) audio=", opus" ;;
+    *) audio="" ;;
+  esac
+  echo "$video$audio"
 }
 
 output_dir=""
 formats=""
+opaque_formats=""
 opaque=false
 speed=""
 max_width=""
@@ -121,10 +164,19 @@ poster_at=""
 fast=false
 input=""
 
+# Project defaults go first, so the command line overrides them.
+config="$(git rev-parse --show-toplevel 2> /dev/null || pwd)/.web-video"
+if [[ -f "$config" ]]; then
+  defaults=$(sed 's/#.*//' "$config" | tr -s '[:space:]' ' ')
+  echo "Defaults from $config:$defaults"
+  set -- $defaults "$@"
+fi
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -o | --output-dir) output_dir=${2:?$1 needs a value}; shift 2 ;;
     -f | --formats) formats=${2:?$1 needs a value}; shift 2 ;;
+    --opaque-formats) opaque_formats=${2:?$1 needs a value}; shift 2 ;;
     --opaque) opaque=true; shift ;;
     --speed) speed=${2:?$1 needs a value}; shift 2 ;;
     --max-width) max_width=${2:?$1 needs a value}; shift 2 ;;
@@ -167,7 +219,7 @@ if ! $opaque; then
   if is_mv_hevc_alpha "$src"; then
     alpha=true
     mv_hevc=true
-  elif pix_fmt_has_alpha "$src"; then
+  elif pix_fmt_has alpha "$src"; then
     echo "Checking the alpha channel for see-through pixels..."
     if has_transparent_pixels "$src"; then
       alpha=true
@@ -180,13 +232,15 @@ fi
 if $alpha; then
   kind=transparent
   all=vp9,hevc
+  default=$all
   hint=", or flatten the alpha with --opaque"
 else
   kind=opaque
   all=av1,hevc,h264
+  default=${opaque_formats:-$all}
   hint=""
 fi
-formats=${formats:-$all}
+formats=${formats:-$default}
 for format in ${formats//,/ }; do
   [[ ",$all," == *",$format,"* ]] || die "$format isn't a format for $kind video: pick from $all$hint"
 done
@@ -233,6 +287,20 @@ fi
 
 even="scale=trunc(iw/2)*2:trunc(ih/2)*2"
 
+# RGB has no color matrix, so swscale would convert with BT.601 and leave the
+# stream untagged, which browsers show as BT.709. Convert with BT.709 instead,
+# once, and tag it. YUV sources keep their own matrix and tags.
+convert=""
+if pix_fmt_has rgb "$src" || pix_fmt_has palette "$src"; then
+  convert=":out_color_matrix=bt709:out_range=tv,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+fi
+# swscale reads a palette straight into YUV with BT.601 whatever matrix it's
+# given, so expand it to RGB first.
+expand=""
+if pix_fmt_has palette "$src"; then
+  expand="format=rgba,"
+fi
+
 # Speed, size, and frame rate go into one lossless intermediate, so avconvert's
 # HEVC with alpha gets them too.
 if $needs_prep; then
@@ -243,25 +311,29 @@ if $needs_prep; then
   if [[ -n "$max_width" ]]; then
     filters+=("scale='min(iw,$max_width)':-2")
   fi
-  filters+=("$even")
+  filters+=("$even$convert")
   # A sped-up variable-rate video stutters in QuickTime; constant 60fps doesn't.
   if [[ -n "$speed$fps" ]]; then
     filters+=("fps=${fps:-60}")
   fi
-  vf=$(IFS=,; echo "${filters[*]}")
+  vf="$expand$(IFS=,; echo "${filters[*]}")"
 
   prep_audio=(-c:a pcm_s16le)
   if [[ -n "$speed" ]] || ! $audio; then
     prep_audio=(-an)
   fi
-  prep_video=(-c:v libx264 -qp 0 -preset ultrafast -pix_fmt yuv420p)
+  # 10-bit: an 8-bit source stays bit-exact, and an RGB one is converted once,
+  # at full precision, instead of being quantized to 8-bit YUV on the way.
+  prep_video=(-c:v libx264 -qp 0 -preset ultrafast -pix_fmt yuv420p10le)
   if $alpha; then
     prep_video=(-c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le)
   fi
 
   echo -e "\nApplying speed, size, and frame rate..."
-  ffmpeg -i "$src" -vf "$vf" "${prep_video[@]}" "${prep_audio[@]}" -loglevel error "${stats[@]}" -y "$tmp/prepared.mov"
+  ffmpeg -i "$src" "${sws[@]}" -vf "$vf" "${prep_video[@]}" "${prep_audio[@]}" -loglevel error "${stats[@]}" -y "$tmp/prepared.mov"
   src="$tmp/prepared.mov"
+  convert=""
+  expand=""
 fi
 
 if $fast; then
@@ -288,7 +360,7 @@ if $alpha && has vp9; then
     -deadline "$vp9_deadline" \
     -cpu-used "$vp9_cpu_used" \
     -auto-alt-ref 0 \
-    -vf "$even,format=yuva420p"
+    -vf "$expand$even$convert,format=yuva420p"
 fi
 
 if $alpha && has hevc; then
@@ -312,7 +384,7 @@ if ! $alpha && has h264; then
     -profile:v main \
     -pix_fmt yuv420p \
     -movflags +faststart \
-    -vf "$even"
+    -vf "$expand$even$convert"
 fi
 
 if ! $alpha && has hevc; then
@@ -324,10 +396,14 @@ if ! $alpha && has hevc; then
     -pix_fmt yuv420p \
     -movflags +faststart \
     -tag:v hvc1 \
-    -vf "$even" \
+    -vf "$expand$even$convert" \
     -x265-params log-level=error
 fi
 
+# -qp is -crf with SVT-AV1's adaptive quantization off, which on screen content
+# scores higher at equal size on every metric tried (SSIMULACRA2 by 4 points).
+# ac-bias spends a little more on high-frequency detail (SVT-AV1 4.0+; older
+# builds ignore it).
 if ! $alpha && has av1; then
   encode "AV1 (smallest, and slow: no worries)" "$target.av1.mp4" \
     "${opus[@]}" \
@@ -335,10 +411,10 @@ if ! $alpha && has av1; then
     -qp "$AV1_QP" \
     -preset "$av1_preset" \
     -b:v 0 \
-    -svtav1-params tile-columns=2:tile-rows=2:lp=0 \
-    -pix_fmt yuv420p \
+    -svtav1-params tile-columns=2:tile-rows=2:lp=0:ac-bias=1 \
+    -pix_fmt yuv420p10le \
     -movflags +faststart \
-    -vf "$even"
+    -vf "$expand$even$convert"
 fi
 
 poster_file=""
@@ -350,10 +426,10 @@ if $poster; then
   echo -e "\nExtracting the poster..."
   if $alpha; then
     poster_file="$target.png"
-    ffmpeg ${seek[@]+"${seek[@]}"} -i "$src" -frames:v 1 -vf "$even" -pix_fmt rgba -compression_level 9 -pred mixed -update 1 -loglevel error -y "$poster_file"
+    ffmpeg ${seek[@]+"${seek[@]}"} -i "$src" "${sws[@]}" -frames:v 1 -vf "$even" -pix_fmt rgba -compression_level 9 -pred mixed -update 1 -loglevel error -y "$poster_file"
   else
     poster_file="$target.jpg"
-    ffmpeg ${seek[@]+"${seek[@]}"} -i "$src" -frames:v 1 -vf "$even" -q:v 5 -update 1 -loglevel error -y "$poster_file"
+    ffmpeg ${seek[@]+"${seek[@]}"} -i "$src" "${sws[@]}" -frames:v 1 -vf "$even" -q:v 5 -update 1 -loglevel error -y "$poster_file"
   fi
 fi
 
@@ -372,12 +448,8 @@ echo -e "\nHTML:\n"
 echo "<video${poster_file:+ poster=\"$(basename "$poster_file")\"} autoplay muted loop playsinline>"
 for format in $order; do
   has "$format" || continue
-  case "$format" in
-    av1) echo "  <source src=\"$name.av1.mp4\" type='video/mp4; codecs=\"av01.0.05M.08, opus\"' />" ;;
-    hevc) echo "  <source src=\"$name.hevc.mp4\" type='video/mp4; codecs=\"hvc1\"' />" ;;
-    h264) echo "  <source src=\"$name.h264.mp4\" type='video/mp4; codecs=\"avc1.4D401E, mp4a.40.2\"' />" ;;
-    vp9) echo "  <source src=\"$name.vp9.webm\" type='video/webm; codecs=\"vp9\"' />" ;;
-  esac
+  ext=$([[ "$format" == vp9 ]] && echo webm || echo mp4)
+  echo "  <source src=\"$name.$format.$ext\" type='video/$ext; codecs=\"$(codecs "$target.$format.$ext" "$format")\"' />"
 done
 echo "</video>"
 
