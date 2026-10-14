@@ -26,6 +26,16 @@ Some options are worth suggesting when the request implies them. Say why when yo
 - **`--fps 30`** for a 60fps screencast of a slow UI, which drops half the frames with little visible loss.
 - **`--fast`** for a draft. It keeps the quality settings but switches to quicker encoder presets, so the encode finishes several times sooner and the files come out bigger. Use it to check timing or framing, then encode again without it.
 
+**Project defaults** go in a `.web-video` file at the root of the project's git repository. When the user states a preference for every video ("we don't ship HEVC", "covers never have sound"), offer to save it there instead of repeating it each run:
+
+```bash
+# AV1 and H.264 only; transparent video still gets VP9 and HEVC
+--opaque-formats av1,h264
+--no-audio
+```
+
+The script prints the defaults it picked up, and options on the command line override them. Use `--opaque-formats` here rather than `--formats`: that one applies to transparent video too, so the first transparent video would fail. Run the script from inside the project: it looks for the file from the current directory, not from the video's location, and resolves a relative `--output-dir` the same way.
+
 **Encoding is slow on purpose.** At the defaults, expect minutes per minute of 1080p video, most of it AV1. Run the script in the background or with the longest timeout your tools allow, and don't kill it for going quiet: when its output isn't a terminal, it reports progress every 30 seconds. It takes one video per run. For several, run them one after another, since each encode already uses every core.
 
 **The script checks its requirements before encoding anything** and names what's missing: ffmpeg with SVT-AV1, x265, x264, and libvpx-vp9, plus macOS `avconvert` for HEVC with alpha. Relay that message. On macOS, `brew install ffmpeg` has every encoder. Elsewhere, a transparent video can only get VP9 (`--formats vp9`): tell the user Safari needs the HEVC file to show transparency and that it has to be encoded on a Mac.
