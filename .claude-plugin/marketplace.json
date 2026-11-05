@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Production-grade Agent Skills from Evil Martians",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "plugins": [
     {
@@ -36,7 +36,12 @@
         "readme",
         "documentation",
         "open-source",
-        "technical-writing"
+        "technical-writing",
+        "github",
+        "markdown",
+        "devrel",
+        "developer-marketing",
+        "getting-started"
       ],
       "skills": [
         "./skills/good-readme"
@@ -53,7 +58,15 @@
         "supply-chain",
         "trusted-publishing",
         "provenance",
-        "github-actions"
+        "github-actions",
+        "security",
+        "supply-chain-security",
+        "oidc",
+        "2fa",
+        "zizmor",
+        "dependency-cooldown",
+        "pnpm",
+        "release-automation"
       ],
       "skills": [
         "./skills/secure-npm-package"
@@ -70,7 +83,14 @@
         "discovery",
         "well-known",
         "distribution",
-        "packaging"
+        "packaging",
+        "ai-agents",
+        "agent-discoverability",
+        "claude-code",
+        "claude-skills",
+        "plugin-marketplace",
+        "npx-skills",
+        "gh-skill"
       ],
       "skills": [
         "./skills/skills-visibility"
@@ -85,7 +105,13 @@
       "keywords": [
         "tailwind",
         "css",
-        "dx"
+        "dx",
+        "tailwindcss",
+        "design-tokens",
+        "design-system",
+        "frontend",
+        "refactoring",
+        "code-review"
       ],
       "skills": [
         "./skills/tailwind-best-practices"
@@ -102,7 +128,16 @@
         "av1",
         "ffmpeg",
         "performance",
-        "transparency"
+        "transparency",
+        "hevc",
+        "h264",
+        "vp9",
+        "webm",
+        "video-compression",
+        "web-performance",
+        "transparent-video",
+        "screencast",
+        "gif-to-video"
       ],
       "skills": [
         "./skills/web-video"

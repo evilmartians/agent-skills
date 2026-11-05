@@ -1,9 +1,9 @@
 ---
 name: tailwind-best-practices
-description: Write Tailwind CSS following practices that keep a fast-to-write codebase maintainable — use design tokens instead of magic values, keep class lists short, group tokens semantically, generate classes in consistent order, avoid @apply for extracting repeated styles, and use fixed variants instead of arbitrary className props. Use this whenever writing or editing Tailwind classes, components, or config, and also when reviewing, cleaning up, refactoring, or auditing an existing Tailwind project. Do NOT use for general CSS architecture unrelated to Tailwind, or for build tooling unrelated to CSS output (bundlers, JS minification, etc.).
+description: Write Tailwind CSS following practices that keep a fast-to-write codebase maintainable — use design tokens instead of magic values, keep class lists short, group tokens semantically, generate classes in consistent order, avoid @apply for extracting repeated styles, and use fixed variants instead of arbitrary className props. Use this whenever writing or editing Tailwind classes, components, or config, and also when reviewing, cleaning up, refactoring, or auditing an existing Tailwind project, including messy or AI-generated Tailwind code, long className strings, inconsistent class order, or design system components. Do NOT use for general CSS architecture unrelated to Tailwind, or for build tooling unrelated to CSS output (bundlers, JS minification, etc.).
 ---
 
-# Tailwind CSS best practices
+# Tailwind CSS best practices for a maintainable codebase
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 

@@ -1,9 +1,9 @@
 ---
 name: secure-npm-package
-description: 'Set up a secure release process for an npm package to protect it from supply chain attacks. Use for any request to create and publish a new npm package, secure npm publishing or releasing, set up npm Trusted Publishing, provenance, or Staged Publishing, harden a release workflow.'
+description: 'Set up a secure release process for an npm package to protect it from supply chain attacks, stolen npm tokens, and npm worms. Use for any request to create and publish a new npm package, secure npm publishing or releasing, set up npm Trusted Publishing (OIDC, no NPM_TOKEN), provenance, or Staged Publishing, publish from GitHub Actions with 2FA approval, harden or audit a release workflow with zizmor, add a dependency cooldown, or disable postinstall scripts. Works with npm, pnpm, Yarn, and Bun.'
 ---
 
-# Release an npm package securely
+# Release an npm package securely and protect it from supply chain attacks
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 

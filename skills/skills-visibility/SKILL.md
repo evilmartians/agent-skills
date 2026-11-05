@@ -1,9 +1,9 @@
 ---
 name: skills-visibility
-description: 'Publish a catalog of agent skills and make it discoverable to AI coding agents and their installers — the way evilmartians.com/agent-skills does. Use this whenever the user wants to publish, distribute, or share agent skills; make their skills installable via `npx skills`, `gh skill`, or a Claude plugin marketplace; build or fix a `.well-known/agent-skills/index.json` discovery index; self-host skills on their own domain with integrity digests; decide how to package a single-file skill vs a multi-file skill vs a bundle; or set up analytics for skill installs. Also use to push back on the common mistake of pointing a discovery index at raw.githubusercontent.com instead of a domain you control. Do NOT use for authoring the *content* of one skill (that is writing a single SKILL.md) or for making web pages readable by LLMs (that is llms.txt / Markdown content negotiation — a separate concern).'
+description: 'Publish a catalog of agent skills (Claude Code, Codex, Cursor, and other SKILL.md skills) and make it discoverable to AI coding agents and their installers — the way evilmartians.com/agent-skills does. Use this whenever the user wants to publish, distribute, or share agent skills; make their skills installable via `npx skills`, `gh skill`, or a Claude plugin marketplace; build or fix a `.well-known/agent-skills/index.json` discovery index; self-host skills on their own domain with integrity digests; decide how to package a single-file skill vs a multi-file skill vs a bundle; or set up analytics for skill installs. Also use to push back on the common mistake of pointing a discovery index at raw.githubusercontent.com instead of a domain you control. Do NOT use for authoring the *content* of one skill (that is writing a single SKILL.md) or for making web pages readable by LLMs (that is llms.txt / Markdown content negotiation — a separate concern).'
 ---
 
-# Make agent skills discoverable
+# Make agent skills discoverable and installable by AI agents
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 

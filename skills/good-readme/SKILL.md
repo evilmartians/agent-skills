@@ -1,9 +1,9 @@
 ---
 name: good-readme
-description: 'Write or improve a README.md for an open source project. Use this for any request to create, rewrite, review, or polish a README, project description, or "getting started" docs for a library, framework, or tool, or to make an open source project more popular or attractive to users. Do NOT use for internal/private repo docs, API reference generation, or CHANGELOG/CONTRIBUTING files.'
+description: 'Write or improve a README.md for an open source project. Use this for any request to create, generate, rewrite, review, or polish a README, GitHub repo page, project description, or "getting started" docs for a library, framework, CLI, or tool, or to make an open source project more popular or attractive to users (more GitHub stars, adoption, developer marketing). Do NOT use for internal/private repo docs, API reference generation, or CHANGELOG/CONTRIBUTING files.'
 ---
 
-# Write a good README
+# Write a good README for an open source project
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 

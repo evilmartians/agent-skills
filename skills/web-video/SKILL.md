@@ -1,9 +1,9 @@
 ---
 name: web-video
-description: 'Encode a video for the web with a bundled ffmpeg script: AV1, HEVC, and H.264 MP4s plus a JPEG poster for ordinary video, or VP9 WebM and HEVC with alpha plus a PNG poster for transparent video, picked from the source automatically. Use when the user wants to optimize, compress, or convert a video, screencast, screen recording, or animated cover for a website, blog, docs, or landing page; speed up or downscale a recording; get AV1, HEVC, or WebM versions; or ship a transparent video that plays in both Safari and Chrome. Do NOT use for editing beyond speed and size, adaptive streaming (HLS, DASH), or video hosted on YouTube or Vimeo.'
+description: 'Encode a video for the web with a bundled ffmpeg script: AV1, HEVC, and H.264 MP4s plus a JPEG poster for ordinary video, or VP9 WebM and HEVC with alpha plus a PNG poster for transparent video, picked from the source automatically. Use when the user wants to optimize, compress, or convert a video, screencast, screen recording, GIF, or animated cover for a website, blog, docs, or landing page; make a video smaller or load faster; replace a GIF with video; add an autoplaying background or hero video; speed up or downscale a recording; get AV1, HEVC, or WebM versions; or ship a transparent video that plays in both Safari and Chrome. Do NOT use for editing beyond speed and size, adaptive streaming (HLS, DASH), or video hosted on YouTube or Vimeo.'
 ---
 
-# Optimize video for the web
+# Optimize and compress video for the web
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 
