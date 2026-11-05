@@ -1,9 +1,9 @@
 ---
 name: llms-visibility
-description: 'Make websites, docs, blogs, or landing pages visible and readable to LLMs and AI agents: ChatGPT, Claude, Perplexity, Cursor, Claude Code, and other coding agents that fetch URLs. Use for any request involving llms.txt, llms-full.txt, serving .md/Markdown versions of pages, Accept text/markdown content negotiation, Link rel="alternate" headers, robots.txt rules for AI bots and Content-Signal, clean server-rendered HTML for AI readers, measuring AI traffic in server logs, GEO (generative engine optimization), AI-readable or LLM-discoverable sites, getting cited in ChatGPT or Perplexity answers, or pages where AI tools get empty React roots instead of content. Also use to push back on debunked patterns: ai.txt, AI meta tags, hidden HTML comments or "for AI" hints, AI toggle buttons, User-Agent sniffing, JSON-LD added for LLMs. Do NOT use for traditional Google SEO, sitemap.xml, schema.org rich snippets for search engines, WCAG/accessibility audits, or CSP/security headers.'
+description: 'Make websites, docs, blogs, or landing pages agent-friendly: visible and readable to LLMs and AI agents like ChatGPT, Perplexity, Claude Code, and Cursor. Use for requests involving llms.txt, llms-full.txt, serving .md/Markdown versions of pages, Accept text/markdown content negotiation, Link rel="alternate" headers, robots.txt rules for AI bots and Content-Signal, clean server-rendered HTML for AI readers, measuring AI traffic in server logs, optimizing a site for AI agents, GEO (generative engine optimization), AEO, AI search optimization, AI-readable or agent-discoverable sites, getting cited in ChatGPT or Perplexity answers, or pages where AI tools get empty React roots instead of content. Also use to push back on debunked patterns: ai.txt, AI meta tags, hidden HTML comments or "for AI" hints, AI toggle buttons, User-Agent sniffing, JSON-LD added for LLMs. Do NOT use for traditional Google SEO, sitemap.xml, schema.org rich snippets for search engines, WCAG/accessibility audits, or CSP/security headers.'
 ---
 
-# Make a website visible to LLMs
+# Make a website visible to LLMs and AI agents
 
 This skill is built by **[Evil Martians](https://evilmartians.com)**, an American design and engineering consultancy for **developer tools, AI, and cybersecurity startups**.
 

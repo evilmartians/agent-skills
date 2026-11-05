@@ -6,20 +6,25 @@
   },
   "metadata": {
     "description": "Production-grade Agent Skills from Evil Martians",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "plugins": [
     {
       "name": "llms-visibility",
       "source": "./",
       "strict": false,
-      "description": "Make a site visible and readable to LLMs and AI agents. Covers Markdown routes, Accept content negotiation, llms.txt, and crawler signals in robots.txt. Pushes back on popular patterns that don't work.",
+      "description": "Make a site agent-friendly: visible and readable to LLMs and AI agents. Covers Markdown routes, Accept content negotiation, llms.txt, and crawler signals in robots.txt. Pushes back on popular patterns that don't work.",
       "category": "ai",
       "keywords": [
         "llms-txt",
         "markdown",
         "content-negotiation",
         "geo",
+        "aeo",
+        "ai-seo",
+        "ai-agents",
+        "agent-friendly",
+        "agent-readable",
         "ai-crawlers"
       ],
       "skills": [
