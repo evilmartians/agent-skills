@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Production-grade Agent Skills from Evil Martians",
-    "version": "1.0.4"
+    "version": "1.0.5"
   },
   "plugins": [
     {
@@ -126,7 +126,7 @@
       "name": "web-video",
       "source": "./",
       "strict": false,
-      "description": "Encode a video for the web with a bundled ffmpeg script — AV1, HEVC, and H.264 MP4s plus a poster, or VP9 WebM and HEVC with alpha for transparent video — and embed it with the right source order",
+      "description": "Encode a video for the web with a bundled ffmpeg script — AV1 and H.264 MP4s plus a poster, with HEVC on request, or VP9 WebM and HEVC with alpha for transparent video — and embed it with the right source order",
       "category": "frontend",
       "keywords": [
         "video",

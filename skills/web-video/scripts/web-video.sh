@@ -39,7 +39,8 @@ usage() {
 Usage: $(basename "$0") [options] <video>
 
 Encodes <video> for the web as <name>.<format>.<ext> files next to it.
-  Opaque video:      AV1 (10-bit), HEVC, and H.264 MP4s and a JPEG poster
+  Opaque video:      AV1 (10-bit) and H.264 MP4s and a JPEG poster; add hevc for
+                     an HEVC MP4 too
   Transparent video: VP9 WebM, HEVC MP4 with alpha (macOS only), and a PNG poster
 Video with see-through pixels gets the transparent formats; --opaque overrides it.
 
@@ -49,7 +50,7 @@ Options:
                         av1,hevc,h264 (opaque) or vp9,hevc (transparent)
       --opaque-formats LIST
                         what opaque video gets when --formats isn't given
-                        (default: av1,hevc,h264)
+                        (default: av1,h264; add hevc for av1,hevc,h264)
       --opaque          flatten any transparency and encode as regular video
       --speed N         play N times faster (2, 1.5); 60fps, drops audio
       --max-width PX    downscale anything wider than PX, keeping the aspect ratio
@@ -67,7 +68,7 @@ Options:
 HEVC with alpha is encoded by avconvert's Apple presets, so --fast and the
 quality options don't apply to it.
 
-A project can set default options, like --opaque-formats av1,h264, in a
+A project can set default options, like --opaque-formats av1,hevc,h264, in a
 .web-video file at the root of its git repository (or the current directory
 outside one). # starts a comment, and the command line overrides the file.
 EOF
@@ -237,7 +238,7 @@ if $alpha; then
 else
   kind=opaque
   all=av1,hevc,h264
-  default=${opaque_formats:-$all}
+  default=${opaque_formats:-av1,h264}
   hint=""
 fi
 formats=${formats:-$default}

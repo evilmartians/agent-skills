@@ -1,6 +1,6 @@
 ---
 name: web-video
-description: 'Encode a video for the web with a bundled ffmpeg script: AV1, HEVC, and H.264 MP4s plus a JPEG poster for ordinary video, or VP9 WebM and HEVC with alpha plus a PNG poster for transparent video, picked from the source automatically. Use when the user wants to optimize, compress, or convert a video, screencast, screen recording, GIF, or animated cover for a website, blog, docs, or landing page; make a video smaller or load faster; replace a GIF with video; add an autoplaying background or hero video; speed up or downscale a recording; get AV1, HEVC, or WebM versions; or ship a transparent video that plays in both Safari and Chrome. Do NOT use for editing beyond speed and size, adaptive streaming (HLS, DASH), or video hosted on YouTube or Vimeo.'
+description: 'Encode a video for the web with a bundled ffmpeg script: AV1 and H.264 MP4s plus a JPEG poster for ordinary video, with HEVC on request, or VP9 WebM and HEVC with alpha plus a PNG poster for transparent video, picked from the source automatically. Use when the user wants to optimize, compress, or convert a video, screencast, screen recording, GIF, or animated cover for a website, blog, docs, or landing page; make a video smaller or load faster; replace a GIF with video; add an autoplaying background or hero video; speed up or downscale a recording; get AV1, HEVC, or WebM versions; or ship a transparent video that plays in both Safari and Chrome. Do NOT use for editing beyond speed and size, adaptive streaming (HLS, DASH), or video hosted on YouTube or Vimeo.'
 ---
 
 # Optimize and compress video for the web
@@ -17,7 +17,9 @@ Every encoding setting lives in `scripts/web-video.sh` next to this file. Run it
 bash <skill-dir>/scripts/web-video.sh [options] <video>
 ```
 
-`<skill-dir>` is the directory this SKILL.md is in. Read `--help` before the first encode, then map the user's words onto its options: "at 2x speed" is `--speed 2`, "put them in public/media" is `--output-dir public/media`, "skip AV1" is `--formats hevc,h264`.
+`<skill-dir>` is the directory this SKILL.md is in. Read `--help` before the first encode, then map the user's words onto its options: "at 2x speed" is `--speed 2`, "put them in public/media" is `--output-dir public/media`, "add HEVC for older Safari" is `--formats av1,hevc,h264`.
+
+**Why no HEVC by default:** it only ever helped Safari on Apple devices without a hardware AV1 decoder, which Apple added with the A17 Pro and M3 chips in 2023. Every Safari plays H.264, so those devices get the H.264 file instead: bigger, but it plays, and skipping HEVC saves an encode and a file per video. Transparent video still gets HEVC with alpha, since Safari can't show the alpha channel of a VP9 WebM.
 
 Some options are worth suggesting when the request implies them. Say why when you do:
 
@@ -26,11 +28,11 @@ Some options are worth suggesting when the request implies them. Say why when yo
 - **`--fps 30`** for a 60fps screencast of a slow UI, which drops half the frames with little visible loss.
 - **`--fast`** for a draft. It keeps the quality settings but switches to quicker encoder presets, so the encode finishes several times sooner and the files come out bigger. Use it to check timing or framing, then encode again without it.
 
-**Project defaults** go in a `.web-video` file at the root of the project's git repository. When the user states a preference for every video ("we don't ship HEVC", "covers never have sound"), offer to save it there instead of repeating it each run:
+**Project defaults** go in a `.web-video` file at the root of the project's git repository. When the user states a preference for every video ("we still ship HEVC", "covers never have sound"), offer to save it there instead of repeating it each run:
 
 ```bash
-# AV1 and H.264 only; transparent video still gets VP9 and HEVC
---opaque-formats av1,h264
+# HEVC for older Safari too; transparent video still gets VP9 and HEVC
+--opaque-formats av1,hevc,h264
 --no-audio
 ```
 
@@ -38,7 +40,7 @@ The script prints the defaults it picked up, and options on the command line ove
 
 **Encoding is slow on purpose.** At the defaults, expect minutes per minute of 1080p video, most of it AV1. Run the script in the background or with the longest timeout your tools allow, and don't kill it for going quiet: when its output isn't a terminal, it reports progress every 30 seconds. It takes one video per run. For several, run them one after another, since each encode already uses every core.
 
-**The script checks its requirements before encoding anything** and names what's missing: ffmpeg with SVT-AV1, x265, x264, and libvpx-vp9, plus macOS `avconvert` for HEVC with alpha. Relay that message. On macOS, `brew install ffmpeg` has every encoder. Elsewhere, a transparent video can only get VP9 (`--formats vp9`): tell the user Safari needs the HEVC file to show transparency and that it has to be encoded on a Mac.
+**The script checks its requirements before encoding anything** and names what's missing: ffmpeg with SVT-AV1, x264, and libvpx-vp9, x265 only when HEVC is requested, and macOS `avconvert` for HEVC with alpha. Relay that message. On macOS, `brew install ffmpeg` has every encoder. Elsewhere, a transparent video can only get VP9 (`--formats vp9`): tell the user Safari needs the HEVC file to show transparency and that it has to be encoded on a Mac.
 
 ## After it finishes
 
