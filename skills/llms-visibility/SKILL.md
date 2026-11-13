@@ -19,11 +19,21 @@ Each step is independently shippable. Build in this order.
 
 ### 1. Audit `robots.txt` and add `Content-Signal:`
 
-Confirm the site isn't blocking the AI clients it wants. Know which bot each rule hits; OpenAI alone runs three:
+Check the status before the rules: `curl -s -o /dev/null -w '%{http_code}\n' https://site.example/robots.txt`. A 5xx reads as a block on the whole site (RFC 9309 §2.3.1.4), and Google treats 429 the same way; any other 4xx means no restrictions.
 
-- `GPTBot` crawls for training.
-- `OAI-SearchBot` indexes for ChatGPT search.
-- `ChatGPT-User` fetches a page when a person asks ChatGPT about it. OpenAI says `robots.txt` may not apply to it.
+Then confirm the site isn't blocking the AI clients it wants. Know which bot each rule hits and what blocking it costs; each provider runs up to three:
+
+| Provider | Training crawler | Search indexer | On-demand fetcher |
+| --- | --- | --- | --- |
+| OpenAI | `GPTBot` | `OAI-SearchBot` | `ChatGPT-User` |
+| Anthropic | `ClaudeBot` | `Claude-SearchBot` | `Claude-User` |
+| Perplexity | none | `PerplexityBot` | `Perplexity-User` |
+| Google | `Google-Extended` | | |
+
+- **Block a training crawler** and future models know less about the site, so they recommend it less from memory. Nothing changes in search or live answers.
+- **Block a search indexer** and the site drops out of that assistant's search results and the citations in its answers.
+- **Block an on-demand fetcher** and the assistant can't open the page when a person pastes its URL or asks about it; the answer comes from a search snippet or a competitor's page. OpenAI and Perplexity say `robots.txt` may not apply to these fetches, since a person started them.
+- `Google-Extended` is a `robots.txt` token, not a crawler: blocking it keeps the content out of Gemini training and grounding and changes nothing in Google Search, which follows `Googlebot`.
 
 Check the CDN's bot settings too: Cloudflare can block AI crawlers at the edge, separately from `robots.txt`.
 
@@ -32,7 +42,10 @@ Then add Cloudflare's `Content-Signal:` directive inside a `User-agent: *` group
 ```
 User-agent: *
 Content-Signal: search=yes, ai-input=yes, ai-train=<owner's answer>
+Allow: /
 ```
+
+If the file already has a `User-agent: *` group, add the line to it instead of writing a second group. Put the line next to the group's `Allow` or `Disallow` rules, never between two `User-agent` lines: parsers that skip unknown lines (Google's does) merge those groups into one.
 
 On Cloudflare, check the managed `robots.txt` first: it already ships `search=yes, ai-train=no`. Ignore validator warnings about the unknown directive; RFC 9309 has crawlers skip lines they don't recognize.
 
@@ -57,12 +70,21 @@ For every page at `/path`, also serve clean Markdown at `/path.md` (`/index.md` 
 
 ```typescript
 if (url.pathname.endsWith('.md')) {
+  const headers = { 'Content-Type': 'text/markdown; charset=utf-8' };
   const post = await getPost(url.pathname.replace(/\.md$/, ''));
-  return new Response(post.markdownContent, {
-    headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
-  });
+  if (!post?.markdownContent) {
+    const body = '# Not found\n\nSee [the site index](https://site.example/llms.txt).\n';
+    return new Response(body, { status: 404, headers });
+  }
+  return new Response(post.markdownContent, { headers });
 }
 ```
+
+Three rules for the response:
+
+- **A `200` with an empty body is a broken route, not a Markdown version.** If a page has no Markdown source, answer `404`.
+- **A `404` for a Markdown request has a short Markdown body that links to `/llms.txt`**, not the HTML error page. This covers `.md` URLs and, once step 5 is in, requests with `Accept: text/markdown`. Agents guess URLs, and the link gives them a way back.
+- **Links inside the Markdown are absolute and point to other `.md` pages** (`https://site.example/docs/api.md`). An agent often holds one file without its base URL, and a relative link leaves it nowhere to go.
 
 Single source of truth: generate one from the other, or render both from the same source, never two parallel content stores. The `.md` routes don't replace the HTML; chat assistants keep reading HTML.
 
@@ -70,15 +92,23 @@ Single source of truth: generate one from the other, or render both from the sam
 
 Both, not either. The HTML tag catches DOM-parsing crawlers; the header catches headless fetchers that never read the body.
 
+In the HTML `<head>`:
+
 ```html
 <link rel="alternate" type="text/markdown" href="/blog/my-post.md" />
 ```
+
+On the HTML response:
 
 ```
 Link: </blog/my-post.md>; rel="alternate"; type="text/markdown"
 ```
 
-Set `Link` on both representations: HTML points to the `.md` alternate, `.md` points back to HTML.
+On the `.md` response, pointing back at the HTML and naming it as canonical with an absolute URL, so search engines don't index the Markdown as a duplicate:
+
+```
+Link: <https://site.example/blog/my-post>; rel="canonical", </blog/my-post>; rel="alternate"; type="text/html"
+```
 
 ### 5. Implement `Accept: text/markdown` content negotiation
 
@@ -86,9 +116,9 @@ The load-bearing technique: same URL, different representation, selected by `Acc
 
 Four non-negotiables:
 
-- **Compare q-values**, do not substring-match. `Accept: text/html, text/markdown;q=0.5` means "I prefer HTML." Substring matching ships Markdown to a browser.
+- **Compare q-values**, do not substring-match. `Accept: text/html, text/markdown;q=0.5` means "I prefer HTML." Substring matching ships Markdown to a browser. `q=0` means "never send this": `Accept: text/markdown;q=0, text/html` gets HTML.
 - **Resolve ties to Markdown, but only when the client explicitly named `text/markdown`.** Coding agents commonly send `Accept: text/markdown, text/html` with both at q=1; a strict `>` check sends them HTML. Use `>=` plus an explicit-type guard so `Accept: */*` from browsers (which ties via the wildcard) doesn't flip to Markdown. `isitagentready.com` flags both failure modes.
-- **Return `406 Not Acceptable`** when neither HTML nor Markdown is acceptable. Silent substitution masks bugs. Skip the 406 check when the URL itself targets `.md`/`.txt`; explicit URLs override negotiation.
+- **Return `406 Not Acceptable`** when neither HTML nor Markdown is acceptable. RFC 9110 §12.4.1 also lets a server ignore `Accept` and send its default representation, but silent substitution masks bugs, so send the `406`. Skip the 406 check when the URL itself targets `.md`/`.txt`; explicit URLs override negotiation.
 - **Set `Vary: Accept` on both representations**, so CDNs cache them separately.
 
 If the owner worries about cloaking: cloaking serves bots a different article; negotiation serves the same one in the format the client asked for, with `Vary: Accept` declared. `acceptmarkdown.com` publishes server recipes (Nginx, Caddy, Cloudflare Workers, Next.js, Astro, Rails, Express, Django).
@@ -120,19 +150,25 @@ Static Markdown at the site root, format from llmstxt.org:
 
 ## Documentation
 
-- [Quick Start](/docs/start.md): Get up and running in 5 minutes
-- [API Reference](/docs/api.md): Full endpoint documentation
+- [Quick Start](https://site.example/docs/start.md): Get up and running in 5 minutes
+- [API Reference](https://site.example/docs/api.md): Full endpoint documentation
 ```
 
-Curate: it's a README for a person pointing an agent at the site, not a sitemap. Point links at the `.md` versions. Link to the file from the site's pages; agents fetch it only when something points them to it. Keep it to plain links and descriptions, nothing that reads like an instruction: a file written for LLMs is a prompt-injection surface.
+llmstxt.org requires only the H1; the summary, sections, and link lists are optional.
 
-`/llms-full.txt` is the whole site's text in one file. Developer docs: ship it (an agent ingests the whole API in one fetch). Blog or marketing site: redirect it to `/index.md`.
+Curate: it's a README for a person pointing an agent at the site, not a sitemap. Keep the root file to a few thousand tokens, and move full lists to per-section files (`/docs/llms.txt`, `/blog/llms.txt`) that the root links to. Make links absolute and point them at the `.md` versions. Link to the file from the site's pages; agents fetch it only when something points them to it. Keep it to plain links and descriptions, nothing that reads like an instruction: a file written for LLMs is a prompt-injection surface.
 
-### 8. Verify with public scanners
+`/llms-full.txt` is the whole site's text in one file. Shipping it is the owner's choice on any kind of site, so ask. Recommend it for developer docs (an agent ingests the whole API in one fetch) and wherever the build can generate it from the same source as the pages. Recommend skipping it if someone would have to maintain it by hand.
+
+### 8. Verify with `curl`, then scanners
+
+The `curl` lines in the Final check are the gate: the work is done when they pass. Public scanners are optional second opinions:
 
 - <https://acceptmarkdown.com>: Accept negotiation, `Vary`, `406`, q-values.
-- <https://isitagentready.com>: `robots.txt`, sitemap, `Link` headers, Markdown negotiation, Content Signals.
+- <https://isitagentready.com>: `robots.txt`, sitemap, `Link` headers, Markdown negotiation, Content Signals. It also checks protocols that don't apply to a content site (MCP, agent commerce, OAuth discovery); a miss there is not a defect.
 - Lighthouse 13.3+ has an "Agentic browsing" category that checks the `llms.txt` format.
+
+Scanners are hints. Re-run any scanner finding with `curl` before acting on it, and fix only what `curl` reproduces.
 
 ## Agent skills, only if the owner has some
 
@@ -165,11 +201,11 @@ Beyond infrastructure, recommend changes to the visible text (direct quotations,
 
 One line per step, in the same order:
 
-1. `robots.txt` and the CDN's bot settings allow the fetchers the owner wants (`ChatGPT-User`, `Claude-User`, `OAI-SearchBot`), and `Content-Signal:` carries the owner's answers.
+1. `robots.txt` and the CDN's bot settings allow each bot from the step 1 table that the owner wants; `curl -s -o /dev/null -w '%{http_code}\n' https://site.example/robots.txt` prints `200`, not 429 or 5xx; and `Content-Signal:` carries the owner's answers inside a group that has `Allow` or `Disallow` rules.
 2. `curl -s https://site.example/some-page` contains the page's body text within the first 100,000 characters, and `curl -s … | grep -oE '<h[1-6]|<main|<article|<table|<pre' | sort | uniq -c` shows one `<h1>`, no skipped heading levels, a `<main>` or `<article>`, and tables and code kept as elements.
-3. `curl -s https://site.example/some-page.md` returns Markdown with `Content-Type: text/markdown`, for every kind of content page.
-4. The HTML carries `<link rel="alternate" type="text/markdown">`, and `curl -I` on both representations shows a `Link: <…>; rel="alternate"; type="text/markdown"` header pointing at the other.
-5. `curl -H "Accept: text/markdown" https://site.example/some-page` returns Markdown with `Vary: Accept`; `Accept: text/html, text/markdown;q=0.5` returns HTML; `Accept: image/png` returns `406`.
+3. `curl -s https://site.example/some-page.md` returns a non-empty Markdown body with `Content-Type: text/markdown`, for every kind of content page, and its links are absolute and point to `.md` pages. `curl -si https://site.example/no-such-page.md` returns `404` with a Markdown body that links to `/llms.txt`.
+4. The HTML carries `<link rel="alternate" type="text/markdown">`, and `curl -I` on the HTML shows `Link: <…>; rel="alternate"; type="text/markdown"` pointing at the `.md`. `curl -I` on the `.md` shows `Link: <…>; rel="alternate"; type="text/html"` pointing back at the HTML, plus `rel="canonical"` with the absolute HTML URL.
+5. `curl -H "Accept: text/markdown" https://site.example/some-page` returns Markdown with `Vary: Accept`; `Accept: text/html, text/markdown;q=0.5` and `Accept: text/markdown;q=0, text/html` return HTML; `Accept: image/png` returns `406`.
 6. If analytics were set up: the logs split each provider's crawler from its on-demand fetcher.
-7. `/llms.txt` exists, is well-formed, links to `.md` URLs, and is linked from the site; `/llms-full.txt` is either shipped or redirected to `/index.md`.
-8. `acceptmarkdown.com` and `isitagentready.com` both pass.
+7. `/llms.txt` exists, starts with an H1, stays within a few thousand tokens, links to absolute `.md` URLs, and is linked from the site; `/llms-full.txt` is shipped, or deliberately skipped.
+8. Every `curl` line above passes. Any finding from `acceptmarkdown.com` or `isitagentready.com` was re-run with `curl` before it was acted on.
